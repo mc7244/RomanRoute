@@ -1,0 +1,6 @@
+[package]
+name = "roman_route"
+version = "0.1.0"
+authors = ["Michele Beltrame <mb@italpro.net>"]
+
+[dependencies]
