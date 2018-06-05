@@ -1,3 +1,11 @@
+struct Urbe {
+  name  : String
+}
+
 fn main() {
-    println!("Let's hope we'll find the way!");
+    let urbi = [Urbe {name:"Roma".to_string()}, Urbe {name:"Mediolanum".to_string()}];
+
+    for urbe in &urbi {
+      println!("{}", urbe.name);
+    }
 }
