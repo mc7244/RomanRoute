@@ -38,6 +38,7 @@ fn find_path(vrs: &Vec<viae::Via>, start_urbe: String, dest_urbe: String, mut pa
             if urbe.nomen == start_urbe {
                 println!("CUR: {} [{} - {}]", via.nomen, urbe.nomen, urbe.miliarium);
                 // Walk the via in both directions
+                // TODO: use slices and iterate on them with an iterator
                 if ( i < via_len-1 ) {
                     for j in i+1 .. via_len {
                         let next_urbe = &via.urbes[j];
