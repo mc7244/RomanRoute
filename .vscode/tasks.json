@@ -5,17 +5,6 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "cargo run",
-            "command": "cargo",
-            "args": [
-                "run"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ]
-        },
-        {
-            "type": "shell",
             "label": "cargo build",
             "command": "cargo",
             "args": [
