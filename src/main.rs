@@ -7,12 +7,13 @@ fn main() {
     // let start_via = find_via(&vrs, start_urbe.clone()).expect("Starting urbe not found in our viae!");
     // println!("START: {} [via: {}]", start_urbe, start_via);
 
-    let dest_urbe = "Ariminium".to_string();
+    //let dest_urbe = "Ariminium".to_string();
+    let dest_urbe = "Parma".to_string();
     // let dest_via = find_via(&vrs, dest_urbe.clone()).expect("Destination urbe not found un our database");
     // println!("DESTINATION: {} [via: {}]", dest_urbe, dest_via);
 
-    let path : Vec<String> = vec![];
-    find_path(&vrs, start_urbe, dest_urbe, path);
+    //let mut path : Vec<String> = vec![];
+    find_path(&vrs, start_urbe, dest_urbe, "".to_string(), 0, 0);
 }
 
 // TODO: accept &str instead of string, but lifetimes need to be defined - one I understand them
@@ -28,27 +29,54 @@ fn main() {
 //     None
 // }
 
-fn find_path(vrs: &Vec<viae::Via>, start_urbe: String, dest_urbe: String, mut path: Vec<String>) {
+fn find_path(vrs: &Vec<viae::Via>, start_urbe: String, dest_urbe: String, from_via: String, steps: usize, depth: usize) {
+    if depth > 10 {
+        println!("TOO MUCH RECURSION");
+        return;
+    }
     // Find all via which traverse the urbe
     // TODO: maybe use a grep() to find the via
     for via in vrs {
+        // Avoid walking the same via we are coming from, or it would be an endless loop
+        if via.nomen == from_via {
+            continue;
+        }
         let via_len = *(&via.urbes.len());
         for i in 0 .. via_len { // "urbe" is a borrowed reference
             let urbe = &via.urbes[i];
             if urbe.nomen == start_urbe {
-                println!("CUR: {} [{} - {}]", via.nomen, urbe.nomen, urbe.miliarium);
+                for _dp in 0 .. depth { print!("  "); }
+                println!("VIA: {} [{} - {}]", via.nomen, urbe.nomen, urbe.miliarium);
                 // Walk the via in both directions
                 // TODO: use slices and iterate on them with an iterator
-                if ( i < via_len-1 ) {
+                if i < via_len-1 {
+                    let mut cursteps = steps;
                     for j in i+1 .. via_len {
                         let next_urbe = &via.urbes[j];
-                        println!("NX: {} [{} - {}]", via.nomen, next_urbe.nomen, next_urbe.miliarium);
+                        cursteps += 1;
+                        for _dp in 0 .. depth { print!("  "); }
+                        println!("STEP {} - NX: {} [{} - {}]", cursteps, via.nomen, next_urbe.nomen, next_urbe.miliarium);
+                        if next_urbe.nomen == dest_urbe {
+                            println!("FOUND DEST!!!\n");
+                            break;
+                        } else {
+                            find_path(vrs, next_urbe.nomen.clone(), dest_urbe.clone(), via.nomen.clone(), cursteps, depth+1);
+                        }
                     }
                 }
-                if ( i > 0 ) {
+                if i > 0 {
+                    let mut cursteps = steps;
                     for j in (0 .. i).rev() {
                         let prev_urbe = &via.urbes[j];
-                        println!("PV: {} [{} - {}]", via.nomen, prev_urbe.nomen, prev_urbe.miliarium);
+                        cursteps += 1;
+                        for _dp in 0 .. depth { print!("  "); }
+                        println!("STEP {} - PV: {} [{} - {}]", cursteps, via.nomen.clone(), prev_urbe.nomen, prev_urbe.miliarium);
+                        if via.nomen == dest_urbe {
+                            println!("FOUND DEST!!!\n");
+                            break;
+                        } else {
+                            find_path(vrs, prev_urbe.nomen.clone(), dest_urbe.clone(), via.nomen.clone(), cursteps, depth+1);
+                        }
                     }
                 }
                 //Vec.index()
