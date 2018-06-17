@@ -8,114 +8,103 @@ fn main() {
     let start_urbe = "Roma".to_string();
 
     //let dest_urbe = "Ariminium".to_string();
-    //let dest_urbe = "Parma".to_string();
-    let dest_urbe = "Mediolanum".to_string();
+    let dest_urbe = "Parma".to_string();
+    //let dest_urbe = "Mediolanum".to_string();
 
     //let traversed_urbes : Vec<String> = [""]
     find_path(&vrs, start_urbe, dest_urbe, "".to_string(), &vec!["".to_string()], 0);
 }
 
 fn find_path(
-    vrs: &Vec<viae::Via>, start_urbe: String, dest_urbe: String,
-    from_via: String, traversed_urbes: &Vec<String>, depth: usize
-) {
+    vrs: &Vec<viae::Via>, start_urbe_nomen: String, dest_urbe_nomen: String,
+    from_via: String, traversed_urbes_nomen: &Vec<String>, depth: usize
+){
     if depth > 10 {
         for _dp in 0 .. depth { print!("  "); }
         println!("!!! TOO MUCH RECURSION !!!");
         return;
     }
 
-    let steps = traversed_urbes.len();
+    let steps = traversed_urbes_nomen.len();
 
     // Find all via which traverse the urbe
-    // TODO: maybe use a grep() to find the via
     for via in vrs {
         // Avoid walking the same via we are coming from, or it would be an endless loop
         if via.nomen == from_via {
             continue;
         }
         let via_len = via.urbes.len();
-        for i in 0 .. via_len { // "urbe" is a borrowed reference
+
+        let start_urbe_idx : usize = match get_urbe_idx_in_via(via, &start_urbe_nomen) {
+            Some(idx)   => { idx }
+            None        => { continue; }
+        };
+        let start_urbe = &via.urbes[start_urbe_idx];
+
+        if DEBUG > 0 {
+            if depth > 0 {
+                for _dp in 1 .. depth { print!("  "); }
+                print!("-> "); 
+            }
+            println!("VIA: {} [{} - {}]", via.nomen, start_urbe.nomen, start_urbe.miliarium);
+        }
+
+        let mut indent = String::new();
+        for _dp in 0 .. depth { for _si in 0 .. 3 { indent.push(' '); } }
+
+        // We now walk the via up and down relative to the start_urbe, in order to
+        // find the destination or a crossing with another via (we recurse in such case)
+        let mut curtraversed_bk = traversed_urbes_nomen.clone();
+        let mut curtraversed_fw = traversed_urbes_nomen.clone();
+        for i in 0 .. via_len {
             let urbe = &via.urbes[i];
-            if urbe.nomen == start_urbe {
+
+            // We are only interested in other urbes
+            if urbe.nomen == start_urbe_nomen {
+                continue;
+            }
+
+            let cursteps = steps + (start_urbe_idx as isize - i as isize).abs() as usize;
+            let direction = if start_urbe_idx > i { "BK" } else { "FW" };
+            if DEBUG > 0 {
+                println!("{}STEP {}/{}: {} [{} - {}]", indent, cursteps, direction, via.nomen.clone(), urbe.nomen, urbe.miliarium);
+            }
+
+            let mut curtraversed = if direction == "BK" { &curtraversed_bk } else { &curtraversed_fw };
+
+            // If we have already been in this urbe before in this path, abandon the path
+            // otherwise we will loop
+            let urbe_nomen = &urbe.nomen;
+            if curtraversed.iter().position(|ref el| *el == urbe_nomen) != None {
                 if DEBUG > 0 {
-                    if depth > 0 {
-                        for _dp in 1 .. depth { print!("  "); }
-                        print!("-> "); 
-                    }
-                    println!("VIA: {} [{} - {}]", via.nomen, urbe.nomen, urbe.miliarium);
+                    println!("{}   already been here, abandoning path", indent);
                 }
+                continue;
+            }
 
-                let mut indent = String::new();
-                for _dp in 0 .. depth { for _si in 0 .. 3 { indent.push(' '); } }
-
-                // Walk the via in both directions
-                // TODO: use slices and iterate on them with an iterator
-                if i < via_len-1 {
-                    let mut cursteps = steps;
-                    let mut curtraversed = traversed_urbes.clone();
-                    for j in i+1 .. via_len {
-                        let next_urbe = &via.urbes[j];
-                        cursteps += 1;
-                        if DEBUG > 0 {
-                            println!("{}STEP {} - NX: {} [{} - {}]", indent, cursteps, via.nomen, next_urbe.nomen, next_urbe.miliarium);
-                        }
-
-                        // If we have already been in this urbe before in this path, abandon the path
-                        // otherwise we will loop
-                        let next_urbe_nomen = &next_urbe.nomen;
-                        if curtraversed.iter().position(|ref el| *el == next_urbe_nomen) != None {
-                            if DEBUG > 0 {
-                                println!("{}   already been here, abandoning path", indent);
-                            }
-                            continue;
-                        }
-
-                        curtraversed.push(next_urbe.nomen.clone());
-                        if next_urbe.nomen == dest_urbe {
-                            println!("{}   !!! FOUND DEST !!!\n", indent);
-                            break;
-                        } else {
-                            find_path(vrs, next_urbe.nomen.clone(), dest_urbe.clone(), via.nomen.clone(), &curtraversed, depth+1);
-                        }
-                    }
-                }
-                if i > 0 {
-                    let mut cursteps = steps;
-                    let mut curtraversed = traversed_urbes.clone();
-                    for j in (0 .. i).rev() {
-                        let prev_urbe = &via.urbes[j];
-                        cursteps += 1;
-                        if DEBUG > 0 {
-                            println!("{}STEP {} - PV: {} [{} - {}]", indent, cursteps, via.nomen.clone(), prev_urbe.nomen, prev_urbe.miliarium);
-                        }
-
-                        // If we have already been in this urbe before in this path, abandon the path
-                        // otherwise we will loop
-                        let prev_urbe_nomen = &prev_urbe.nomen;
-                        if curtraversed.iter().position(|ref el| *el == prev_urbe_nomen) != None {
-                            if DEBUG > 0 {
-                                println!("{}   already been here, abandoning path", indent);
-                            }
-                            continue;
-                        }
-
-                        curtraversed.push(prev_urbe.nomen.clone());
-                        if via.nomen == dest_urbe {
-                            println!("{}   !!! FOUND DEST !!!\n", indent);
-                            break;
-                        } else {
-                            find_path(vrs, prev_urbe.nomen.clone(), dest_urbe.clone(), via.nomen.clone(), &curtraversed, depth+1);
-                        }
-                    }
-                }
-                //Vec.index()
-                //return Some( via.nomen.clone() );
+            // TODO: unshift from this list when changing direction
+            curtraversed.push(urbe.nomen.clone());
+            if urbe.nomen == dest_urbe_nomen {
+                println!("{}   !!! FOUND DEST !!!\n", indent);
+                break;
+            } else {
+                find_path(vrs, urbe.nomen.clone(), dest_urbe_nomen.clone(), via.nomen.clone(), &curtraversed, depth+1);
             }
         }
     }
-    // if path.len() < 10 {
-    //     path.push( start_urbe.clone() );
-    //     find_path(start_urbe, start_via, path);
-    // }
+}
+
+fn get_urbe_idx_in_via(via: &viae::Via, urbe_nomen: &String) -> Option<usize> {
+    for i in 0 .. via.urbes.len() {
+        let urbe = &via.urbes[i];
+
+        // We are only interested in the start_urbe
+        if urbe.nomen != *urbe_nomen {
+            continue;
+        }
+
+        return Some(i);
+    }
+
+    None
 }
