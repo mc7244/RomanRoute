@@ -70,25 +70,30 @@ fn find_path(
                 println!("{}STEP {}/{}: {} [{} - {}]", indent, cursteps, direction, via.nomen.clone(), urbe.nomen, urbe.miliarium);
             }
 
-            let mut curtraversed = if direction == "BK" { &curtraversed_bk } else { &curtraversed_fw };
-
             // If we have already been in this urbe before in this path, abandon the path
             // otherwise we will loop
             let urbe_nomen = &urbe.nomen;
-            if curtraversed.iter().position(|ref el| *el == urbe_nomen) != None {
+            if traversed_urbes_nomen.iter().position(|ref el| *el == urbe_nomen) != None {
                 if DEBUG > 0 {
                     println!("{}   already been here, abandoning path", indent);
                 }
                 continue;
             }
 
-            // TODO: unshift from this list when changing direction
-            curtraversed.push(urbe.nomen.clone());
+            // Push on the path we are walking.
+            // Note: do this before creating the curtraversed reference, or it wouldn't be allowed by Rust
+            if direction == "BK" {
+                curtraversed_bk.push(urbe.nomen.clone());
+            } else {
+                curtraversed_fw.push(urbe.nomen.clone());
+            }
+            
             if urbe.nomen == dest_urbe_nomen {
                 println!("{}   !!! FOUND DEST !!!\n", indent);
                 break;
             } else {
-                find_path(vrs, urbe.nomen.clone(), dest_urbe_nomen.clone(), via.nomen.clone(), &curtraversed, depth+1);
+                let curtraversed = if direction == "BK" { &curtraversed_bk } else { &curtraversed_fw };
+                find_path(vrs, urbe.nomen.clone(), dest_urbe_nomen.clone(), via.nomen.clone(), curtraversed, depth+1);
             }
         }
     }
