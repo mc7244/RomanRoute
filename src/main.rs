@@ -1,6 +1,6 @@
 mod viae;
 
-static DEBUG : usize = 1;
+static DEBUG: usize = 1;
 
 fn main() {
     let vrs = viae::get_viae();
@@ -12,15 +12,28 @@ fn main() {
     //let dest_urbe = "Mediolanum".to_string();
 
     //let traversed_urbes : Vec<String> = [""]
-    find_path(&vrs, start_urbe, dest_urbe, "".to_string(), &vec!["".to_string()], 0);
+    find_path(
+        &vrs,
+        start_urbe,
+        dest_urbe,
+        "".to_string(),
+        &vec!["".to_string()],
+        0,
+    );
 }
 
 fn find_path(
-    vrs: &Vec<viae::Via>, start_urbe_nomen: String, dest_urbe_nomen: String,
-    from_via: String, traversed_urbes_nomen: &Vec<String>, depth: usize
-){
+    vrs: &Vec<viae::Via>,
+    start_urbe_nomen: String,
+    dest_urbe_nomen: String,
+    from_via: String,
+    traversed_urbes_nomen: &Vec<String>,
+    depth: usize,
+) {
     if depth > 10 {
-        for _dp in 0 .. depth { print!("  "); }
+        for _dp in 0..depth {
+            print!("  ");
+        }
         println!("!!! TOO MUCH RECURSION !!!");
         return;
     }
@@ -35,28 +48,40 @@ fn find_path(
         }
         let via_len = via.urbes.len();
 
-        let start_urbe_idx : usize = match get_urbe_idx_in_via(via, &start_urbe_nomen) {
-            Some(idx)   => { idx }
-            None        => { continue; }
+        let start_urbe_idx: usize = match get_urbe_idx_in_via(via, &start_urbe_nomen) {
+            Some(idx) => idx,
+            None => {
+                continue;
+            }
         };
         let start_urbe = &via.urbes[start_urbe_idx];
 
         if DEBUG > 0 {
             if depth > 0 {
-                for _dp in 1 .. depth { print!("  "); }
-                print!("-> "); 
+                for _dp in 1..depth {
+                    print!("  ");
+                }
+                print!("-> ");
             }
-            println!("VIA: {} [{:03} - {}]", via.nomen, start_urbe.miliarium, start_urbe.nomen);
+            println!(
+                "VIA: {} [{:03} - {}]",
+                via.nomen, start_urbe.miliarium, start_urbe.nomen
+            );
         }
 
         let mut indent = String::new();
-        for _dp in 0 .. depth { for _si in 0 .. 3 { indent.push(' '); } }
+        for _dp in 0..depth {
+            for _si in 0..3 {
+                indent.push(' ');
+            }
+        }
 
         // We now walk the via up and down relative to the start_urbe, in order to
         // find the destination or a crossing with another via (we recurse in such case)
         let mut curtraversed_bk = traversed_urbes_nomen.clone();
         let mut curtraversed_fw = traversed_urbes_nomen.clone();
-        for i in 0 .. via_len {  // FIXME?: for (i, urbe) in &via_urbes.enumerate() {
+        for i in 0..via_len {
+            // FIXME?: for (i, urbe) in &via_urbes.enumerate() {
             let urbe = &via.urbes[i];
 
             // We are only interested in other urbes
@@ -67,13 +92,24 @@ fn find_path(
             let cursteps = steps + (start_urbe_idx as isize - i as isize).abs() as usize;
             let direction = if start_urbe_idx > i { "BK" } else { "FW" };
             if DEBUG > 0 {
-                println!("{}STEP {}/{}: {} [{:03} - {}]", indent, cursteps, direction, via.nomen.clone(), urbe.miliarium, urbe.nomen);
+                println!(
+                    "{}STEP {}/{}: {} [{:03} - {}]",
+                    indent,
+                    cursteps,
+                    direction,
+                    via.nomen.clone(),
+                    urbe.miliarium,
+                    urbe.nomen
+                );
             }
 
             // If we have already been in this urbe before in this path, abandon the path
             // otherwise we will loop
             let urbe_nomen = &urbe.nomen;
-            if traversed_urbes_nomen.iter().position(|ref el| *el == urbe_nomen) != None {
+            if traversed_urbes_nomen
+                .iter()
+                .position(|ref el| *el == urbe_nomen) != None
+            {
                 if DEBUG > 0 {
                     println!("{}   already been here, abandoning path", indent);
                 }
@@ -92,15 +128,26 @@ fn find_path(
                 println!("{}   !!! FOUND DEST !!!\n", indent);
                 break;
             } else {
-                let curtraversed = if direction == "BK" { &curtraversed_bk } else { &curtraversed_fw };
-                find_path(vrs, urbe.nomen.clone(), dest_urbe_nomen.clone(), via.nomen.clone(), curtraversed, depth+1);
+                let curtraversed = if direction == "BK" {
+                    &curtraversed_bk
+                } else {
+                    &curtraversed_fw
+                };
+                find_path(
+                    vrs,
+                    urbe.nomen.clone(),
+                    dest_urbe_nomen.clone(),
+                    via.nomen.clone(),
+                    curtraversed,
+                    depth + 1,
+                );
             }
         }
     }
 }
 
 fn get_urbe_idx_in_via(via: &viae::Via, urbe_nomen: &String) -> Option<usize> {
-    for i in 0 .. via.urbes.len() {
+    for i in 0..via.urbes.len() {
         let urbe = &via.urbes[i];
 
         // We are only interested in the start_urbe
